@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         recon.cpp \
-    fileio.cpp
+    fileio.cpp \
+    utils.cpp
 
 HEADERS += \
         recon.h \
-    fileio.h
+    fileio.h \
+    utils.h
 
 FORMS += \
         recon.ui
