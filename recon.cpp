@@ -53,8 +53,13 @@ void Recon::saveFile(){
 
 void Recon::updateState(){
     QStringList valueList;
-    valueList << str2qstr(projectInfo->projectName);
-
-    ui->stateTableWidget->setItem(0,1,new QTableWidgetItem(valueList[0]));
+    valueList << str2qstr(projectInfo->projectName) << QString::number(projectInfo->imagesNum) << showBool(projectInfo->isCalitration) <<\
+                 showBool(projectInfo->isSfm) << showBool(projectInfo->isDenseRec) <<showBool(projectInfo->isSurface);
+    for(int i = 0;i<6;i++){
+        ui->stateTableWidget->setItem(i,1,new QTableWidgetItem(valueList[i]));
+    }
+    for(auto item : projectInfo->imagePaths){
+        ui->imagePathListWidget->addItem(str2qstr(getImageNameFromPath(item)));
+    }
 }
 

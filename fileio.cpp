@@ -1,12 +1,12 @@
 #include"fileio.h"
 
 ProjectInfo::ProjectInfo(){
-   isInit = false;
-   imagesNum = 0;
-   isCalitration = false;
-   isSfm = false;
-   isDenseRec= false;
-   isSurface= false;
+    isInit = false;
+    imagesNum = 0;
+    isCalitration = false;
+    isSfm = false;
+    isDenseRec= false;
+    isSurface= false;
 }
 
 void ProjectInfo::setProjectName(const string projectNamePara){
@@ -38,7 +38,7 @@ void ProjectInfo::clearAllInfo(){
 }
 
 void ProjectInfo::setProject(string filePath){
-//TODO: get the project information from filePath
+    //TODO: get the project information from filePath
 }
 
 
@@ -51,9 +51,9 @@ ProjectInfo* FileIO::getInfoFromFile(QWidget* Rec)
 {
     QString OpenFile, OpenFilePath;
     OpenFile = QFileDialog::getOpenFileName(Rec,
-        "please choose an image file",
-        "",
-        "Image Files(*.txt);;All(*.*)");
+                                            "please choose an image file",
+                                            "",
+                                            "Image Files(*.txt);;All(*.*)");
     qDebug()<<OpenFile;
     char* fp = OpenFile.toUtf8().data();
     std::string s = fp;
@@ -81,9 +81,36 @@ ProjectInfo* FileIO::getInfoFromFile(QWidget* Rec)
     if(atoi(slist[_index][1].c_str()) == 1){
         projectInfo->isCalitration = true;
         for(auto item :slist[_index+1]){
-
+            projectInfo->KMatrix.push_back(stringToNum<double>(item));
         }
-        projectInfo->KMatrix;
+        _index += 2;
+    }else {
+        projectInfo->isCalitration = false;
+        _index += 1;
+    }
+    if(atoi(slist[_index][1].c_str()) == 1){
+        projectInfo->isSfm = true;
+        projectInfo->sfmResultPath = slist[_index][2];
+        _index++;
+    }else {
+    projectInfo->isSfm = false;
+    _index++;
+    }
+    if(atoi(slist[_index][1].c_str()) == 1){
+        projectInfo->isDenseRec = true;
+        projectInfo->denseRecResultPath = slist[_index][2];
+        _index++;
+    }else {
+    projectInfo->isDenseRec = false;
+    _index++;
+    }
+    if(atoi(slist[_index][1].c_str()) == 1){
+        projectInfo->isSurface = true;
+        projectInfo->surfacePath = slist[_index][2];
+        _index++;
+    }else {
+    projectInfo->isSurface = false;
+    _index++;
     }
     ifstrm.close();
     return projectInfo;

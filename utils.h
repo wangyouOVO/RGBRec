@@ -4,9 +4,13 @@
 #include<string>
 #include<iostream>
 #include<sstream>
+#include<QDebug>
 using namespace std;
+
 QString str2qstr(const string str);
+
 string qstr2str(const QString qstr);
+
 //数据类型转换模板函数
 template <class Type>
 Type stringToNum(const string str)
@@ -17,4 +21,12 @@ Type stringToNum(const string str)
     return num;
 }
 
+void debugstring(char* comment,string inputstring);
+
+QString showBool(bool);
+
+string getImageNameFromPath(string);
+
 #endif // UTILS_H
+
+
