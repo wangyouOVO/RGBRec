@@ -28,6 +28,7 @@ void ProjectInfo::deleteImagePath(int imageIndex){
 
 void ProjectInfo::clearAllInfo(){
     isInit = false;
+    projectName = "";
     imagesNum = 0;
     imagePaths.clear();
     isCalitration = false;
@@ -67,6 +68,7 @@ ProjectInfo* FileIO::getInfoFromFile(QWidget* Rec)
         }
         slist.push_back(vlist);
     }
+    projectInfo->isInit = true;
     projectInfo->projectName = slist[0][1];
     projectInfo->imagesNum = atoi(slist[1][1].c_str());
     unsigned _index = 2 + unsigned(projectInfo->imagesNum);
