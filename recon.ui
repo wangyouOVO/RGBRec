@@ -247,7 +247,7 @@
           <x>0</x>
           <y>0</y>
           <width>198</width>
-          <height>293</height>
+          <height>294</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -264,7 +264,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QListWidget" name="listWidget"/>
+          <widget class="QListWidget" name="logListWidget"/>
          </item>
         </layout>
        </widget>

@@ -28,6 +28,7 @@ void ProjectInfo::deleteImagePath(int imageIndex){
 
 void ProjectInfo::clearAllInfo(){
     isInit = false;
+    projectName = "";
     imagesNum = 0;
     imagePaths.clear();
     isCalitration = false;

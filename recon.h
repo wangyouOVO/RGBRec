@@ -8,6 +8,8 @@
 #include <QDebug>
 #include "fileio.h"
 #include "utils.h"
+#include<QListWidget>
+#include<QMessageBox>
 namespace Ui {
 class Recon;
 }
@@ -24,7 +26,10 @@ public:
     void initWin();
     void openFile();
     void saveFile();
+    void closeFile();
     void updateState();
+    void onListImageItemClicked(QListWidgetItem*);
+    void addPhoto(QWidget* Rec);
 private:
     Ui::Recon *ui;
 };

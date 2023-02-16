@@ -23,6 +23,10 @@ QString showBool(bool b){
     return b?yes:no;
 }
 
+string saveBool(bool b){
+    return b?"1":"0";
+}
+
 string getImageNameFromPath(string path){
     string subname;
     for (auto i = path.end() - 1; *i != '/'; i--)
@@ -32,6 +36,16 @@ string getImageNameFromPath(string path){
     return subname;
 }
 
+
+string getPathFromFullPath(string path){
+    string pathName;
+    auto i = path.end() - 1;
+    while(*i != '/'){
+        i--;
+    }
+    pathName.assign(path.begin(),i+1);
+    return pathName;
+}
 
 string joinStrVec(const vector<string> v, string splitor) {
   string s = "";

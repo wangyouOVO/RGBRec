@@ -23,7 +23,7 @@ public:
     void addImagePath(string);
     void deleteImagePath(int);
     void clearAllInfo();
-    void setProject(string);
+
     bool isInit;
     string projectName;
     int imagesNum;

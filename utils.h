@@ -27,6 +27,9 @@ QString showBool(bool);
 
 string getImageNameFromPath(string);
 
+string saveBool(bool);
+
+string getPathFromFullPath(string path);
 #endif // UTILS_H
 
 
