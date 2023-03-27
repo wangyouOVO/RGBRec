@@ -1,6 +1,6 @@
 #include "recon.h"
 #include "ui_recon.h"
-
+#include "QDialog"
 
 Recon::Recon(QWidget *parent) :
     QMainWindow(parent),
@@ -92,6 +92,13 @@ void Recon::onListImageItemClicked(QListWidgetItem* item){
         return;
     }
     ui->imagelabel->setPixmap(QPixmap::fromImage(img).scaled(ui->imagelabel->size()));
+    // QDialog *dlg = new QDialog (this);
+    // dlg->resize(200,200);
+    // dlg->setAttribute(Qt::WA_DeleteOnClose);
+    // QLabel *haha = new QLabel (dlg);
+    // haha->resize(200,200);
+    // haha->setPixmap(QPixmap::fromImage(img).scaled(haha->size()));
+    // dlg->show();
 
 }
 
