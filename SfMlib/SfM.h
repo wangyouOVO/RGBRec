@@ -10,9 +10,7 @@ class SfM
 public:
     SfM(){};
 
-    SfM(vector<string> imageComplateNames,vector<double> K,vector<double> distortion = {});
-    
-    bool setSfmPara();
+    SfM(vector<string> imageComplateNames,vector<double> K = {},vector<double> distortion = {});
 
     ~SfM(){};
 
@@ -31,7 +29,8 @@ private:
     vector<string> mvImageComplateNames;
     vector<cv::Mat> mvImages;
     Instinsics minstinsics;
-    
+    vector<ImageKPandDescribe> mvImageFeatureSet;
+    FeatureUtils mFeatureUtils;
     vector<cv::Mat> mvImagePose;
     MatchMatrix mMatchMatrix;
     
