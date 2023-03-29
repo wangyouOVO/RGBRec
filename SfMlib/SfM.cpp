@@ -75,4 +75,25 @@ void SfM::computeMatchMatrix() {
 
 
 
+void SfM::mapInit(){
+    map<float, ImagePair> pairsHomographyInliers ;
+    const size_t numImages = mvImages.size();
+    for (size_t i = 0; i < numImages - 1; i++) {
+        for (size_t j = i + 1; j < numImages; j++) {
+            if (mMatchMatrix[i][j].size() < MIN_POINT_COUNT_FOR_HOMOGRAPHY) {
+                pairsHomographyInliers[1.0] = {i, j};
+                continue;
+            }
+
+            const int numInliers = StereoUtilities::findHomographyInliers(
+                    mvImageFeatureSet[i],
+                    mvImageFeatureSet[j],
+                    mMatchMatrix[i][j]);
+            const float inliersRatio = (float)numInliers / (float)(mMatchMatrix[i][j].size());
+            pairsHomographyInliers[inliersRatio] = {i, j};
+        }
+    }
+
+    
+}
 
