@@ -16,6 +16,8 @@ public:
 
     void sfmStart();
 
+    void saveCloudAndCamerasToPLY(const std::string& filename);
+
 private:
 
     void featureExtract();
@@ -24,19 +26,25 @@ private:
 
     void mapInit();
 
-    void addAllFrames();
+    void adjustCurrentBundle();
+
+    void addMoreFrames();
+
+    Images2D3DMatches find2D3DMatches();
+
+    void mergeNewPointCloud(const PointCloud& newPointcloud);
 
     vector<string> mvImageComplateNames;
     vector<cv::Mat> mvImages;
-    Instinsics minstinsics;
+    Intrinsics mintrinsics;
     vector<ImageKPandDescribe> mvImageFeatureSet;
     FeatureUtils mFeatureUtils;
-    vector<cv::Mat> mvImagePose;
+    vector<cv::Matx34f> mvImagePose;
     MatchMatrix mMatchMatrix;
-    
-
-    
-
+    std::set<int>             mDoneViews;
+    std::set<int>             mGoodViews;
+    PointCloud                mReconstructionCloud;
+   
 };
 
 

@@ -6,6 +6,7 @@
 #include "FeatureUtils.h"
 #include <iostream>
 #include <vector>
+#include <set>
 #include <opencv2/core/core.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -15,7 +16,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <thread>
 #include <StereoUtils.h>
-
+#include <BAUtil.h>
 
 using namespace std;
 using namespace cv;
@@ -24,13 +25,15 @@ using namespace cv;
 #define RANSAC_THRESHOLD 10.0
 #define MIN_REPROJECTION_ERROR 10.0
 #define POSE_INLIERS_MINIMAL_RATIO 0.5
+const float MERGE_CLOUD_POINT_MIN_MATCH_DISTANCE   = 0.01;
+const float MERGE_CLOUD_FEATURE_MIN_MATCH_DISTANCE = 20.0;
 
 typedef vector<vector<vector<cv::DMatch>>> MatchMatrix;
 typedef std::vector<cv::Point2f>  Points2f;
 typedef std::vector<cv::Point3f>  Points3f;
 typedef std::vector<Point3DInMap>    PointCloud;
 typedef std::vector<Point3DInMapRGB> PointCloudRGB;
-
+typedef std::map<int, Image2D3DMatch> Images2D3DMatches;
 ///Rotational element in a 3x4 matrix
 const cv::Rect ROT(0, 0, 3, 3);
 
