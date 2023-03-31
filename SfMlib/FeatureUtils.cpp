@@ -7,13 +7,13 @@ FeatureUtils::FeatureUtils(){
 }
 
 
-ImageKPandDescribe& FeatureUtils::getKPs(cv::Mat& image){
+ImageKPandDescribe FeatureUtils::getKPs(cv::Mat& image){
     ImageKPandDescribe imageKPandDescribe;
     mDetector->detectAndCompute(image, noArray(), imageKPandDescribe.kps, imageKPandDescribe.descriptors);
     return imageKPandDescribe;
 }
 
-ImageMatchs& FeatureUtils::getMatch(ImageKPandDescribe& ImageKPandDescribeOne,
+ImageMatchs FeatureUtils::getMatch(ImageKPandDescribe& ImageKPandDescribeOne,
     ImageKPandDescribe& ImageKPandDescribeTwo){
     // 匹配描述符
     std::vector<DMatch> matches;
