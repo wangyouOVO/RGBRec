@@ -27,23 +27,31 @@ SfM::SfM(vector<string> imageComplateNames, vector<double> K = {}, vector<double
     // TODO: 添加畸变函数
 }
 
-SfM::SfM(vector<string> imageComplateNames){
+SfM::SfM(vector<string> imageComplateNames)
+{
     mvImageComplateNames = imageComplateNames;
 
     getAllImages(mvImageComplateNames, mvImages);
 
     mintrinsics.K = (Mat_<float>(3, 3) << 2500, 0, mvImages[0].cols / 2,
-                         0, 2500, mvImages[0].rows / 2,
-                         0, 0, 1);
-   
+                     0, 2500, mvImages[0].rows / 2,
+                     0, 0, 1);
+
     mintrinsics.K_inv = mintrinsics.K.inv();
-    
-    
+
+    mvImagePose.resize(mvImages.size());
+#ifdef _DEBUG_MODE_
+    cout << "共有" << mvImageComplateNames.size() << "张照片" << endl;
+    cout << "K:" << endl;
+    cout << mintrinsics.K << endl;
+#endif
+
     // TODO: 添加畸变函数
 }
 
 void SfM::sfmStart()
 {
+
     featureExtract();
 
     computeMatchMatrix();
@@ -51,20 +59,32 @@ void SfM::sfmStart()
     mapInit();
 
     addMoreFrames();
-
 }
 
 void SfM::featureExtract()
 {
+#ifdef _DEBUG_MODE_
+    cout << "正在提取特征点" << endl;
+#endif
+
     mvImageFeatureSet.clear();
     for (auto image : mvImages)
     {
         mvImageFeatureSet.push_back(mFeatureUtils.getKPs(image));
     }
+
+#ifdef _DEBUG_MODE_
+    cout << "特征点提取完成..." << endl;
+    cout << "共有" << mvImageFeatureSet.size() << "组特征" << endl;
+#endif
 }
 
 void SfM::computeMatchMatrix()
 {
+
+#ifdef _DEBUG_MODE_
+    cout << "正在获取匹配矩阵..." << endl;
+#endif
 
     const size_t numImages = mvImages.size();
     mMatchMatrix.resize(numImages, vector<ImageMatchs>(numImages));
@@ -104,12 +124,19 @@ void SfM::computeMatchMatrix()
     {
         t.join();
     }
+#ifdef _DEBUG_MODE_
+    cout << "共" << MIN(numThreads, pairs.size()) << "匹配线程"
+         << ",已经获得匹配矩阵" << endl;
+#endif
 }
 
 void SfM::mapInit()
 {
 
-    // 排序
+#ifdef _DEBUG_MODE_
+    cout << "开始根据 H 内点比例对 pairs 排序" << endl;
+#endif
+
     map<float, ImagePair> pairsHomographyInliers;
     const size_t numImages = mvImages.size();
     for (size_t i = 0; i < numImages - 1; i++)
@@ -131,7 +158,15 @@ void SfM::mapInit()
         }
     }
 
-    // 尝试初始化并BA
+#ifdef _DEBUG_MODE_
+    cout << "排序完成,共" << pairsHomographyInliers.size() << "对，结果如下：" << endl;
+    for (auto it = pairsHomographyInliers.begin(); it != pairsHomographyInliers.end(); it++)
+    {
+        cout << it->second.left << "和" << it->second.right << " : " << it->first << endl;
+    }
+    cout << "开始地图初始化初始化" << endl;
+#endif
+
     Matx34f Pleft = Matx34f::eye();
     Matx34f Pright = Matx34f::eye();
     PointCloud pointCloud;
@@ -151,17 +186,28 @@ void SfM::mapInit()
 
         if (not success)
         {
+#ifdef _DEBUG_MODE_
+            cout << i << "和" << j << "求解失败1" << endl;
+#endif
             continue;
         }
+
+#ifdef _DEBUG_MODE_
+        cout << i << "和" << j << "位姿求解完成！" << endl;
+#endif
 
         float poseInliersRatio = (float)prunedMatching.size() / (float)mMatchMatrix[i][j].size();
 
         if (poseInliersRatio < POSE_INLIERS_MINIMAL_RATIO)
         {
-
+#ifdef _DEBUG_MODE_
+            cout << i << "和" << j << "求解失败2" << endl;
+#endif
             continue;
         }
-
+#ifdef _DEBUG_MODE_
+            cout << i << "和" << j << "内点满足条件" << endl;
+#endif
         mMatchMatrix[i][j] = prunedMatching;
 
         success = StereoUtilities::triangulateViews(
@@ -174,9 +220,14 @@ void SfM::mapInit()
 
         if (not success)
         {
+#ifdef _DEBUG_MODE_
+            cout << i << "和" << j << "求解失败3" << endl;
+#endif
             continue;
         }
-
+#ifdef _DEBUG_MODE_
+            cout << i << "和" << j << "三角化成功" << endl;
+#endif
         mReconstructionCloud = pointCloud;
         mvImagePose[i] = Pleft;
         mvImagePose[j] = Pright;
@@ -184,7 +235,9 @@ void SfM::mapInit()
         mDoneViews.insert(j);
         mGoodViews.insert(i);
         mGoodViews.insert(j);
-
+#ifdef _DEBUG_MODE_
+            cout << "姿态保存完毕" << endl;
+#endif
         adjustCurrentBundle();
 
         break;
@@ -193,11 +246,17 @@ void SfM::mapInit()
 
 void SfM::adjustCurrentBundle()
 {
+#ifdef _DEBUG_MODE_
+    cout << "开始BA" << endl;
+#endif
     SfMBundleAdjustmentUtils::adjustBundle(
         mReconstructionCloud,
         mvImagePose,
         mintrinsics,
         mvImageFeatureSet);
+#ifdef _DEBUG_MODE_
+    cout << "BA完成" << endl;
+#endif
 }
 
 void SfM::addMoreFrames()
@@ -222,6 +281,9 @@ void SfM::addMoreFrames()
         }
         if (isUpdate)
         {
+#ifdef _DEBUG_MODE_
+    cout << "开始插入" << bestView <<endl;
+#endif
             mDoneViews.insert(bestView);
             // recover the new view camera pose
             Matx34f newCameraPose;
@@ -231,10 +293,12 @@ void SfM::addMoreFrames()
                 newCameraPose);
 
             if (not success)
-            {
+            {   
                 continue;
             }
-
+#ifdef _DEBUG_MODE_
+    cout << bestView<<"解算位姿成功" << endl;
+#endif
             mvImagePose[bestView] = newCameraPose;
 
             bool anyViewSuccess = false;

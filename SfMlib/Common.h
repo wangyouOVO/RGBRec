@@ -15,6 +15,7 @@
 using namespace std;
 using namespace cv;
 
+#define _DEBUG_MODE_ 
 #define MIN_POINT_COUNT_FOR_HOMOGRAPHY 100
 #define RANSAC_THRESHOLD 10.0
 #define MIN_REPROJECTION_ERROR 10.0
