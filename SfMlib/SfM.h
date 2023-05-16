@@ -33,6 +33,8 @@ public:
 
     void saveCloudAndCamerasToPLY(const std::string& filename);
 
+    void saveResultForMVS();
+
 private:
 
     void featureExtract();
@@ -59,6 +61,7 @@ private:
     std::set<int>             mDoneViews;
     std::set<int>             mGoodViews;
     PointCloud                mReconstructionCloud;
+    vector<vector<pair<int,int>>> mvInlierList; // 参考帧->[<源帧，H_inlier_num>]
    
 };
 

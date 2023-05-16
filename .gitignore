@@ -1,3 +1,7 @@
 build/*
 .vscode
 data
+scan
+hello_points.ply
+hello_cameras.ply
+Results

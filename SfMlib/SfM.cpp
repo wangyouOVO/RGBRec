@@ -1,6 +1,58 @@
 #include "Common.h"
 #include "SfM.h"
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/io.h>
+
+void createOrClearFolder(const std::string &folderPath)
+{
+    // Check if folder exists
+    struct stat folderStat;
+    if (stat(folderPath.c_str(), &folderStat) == 0)
+    {
+        // Clear folder
+        DIR *dir = opendir(folderPath.c_str());
+        if (dir != nullptr)
+        {
+            struct dirent *entry;
+            while ((entry = readdir(dir)) != nullptr)
+            {
+                std::string filePath = folderPath + "/" + entry->d_name;
+                if (entry->d_type == DT_DIR)
+                {
+                    // Recursively remove subdirectories
+                    if (std::string(entry->d_name) != "." && std::string(entry->d_name) != "..")
+                    {
+                        createOrClearFolder(filePath);
+                        rmdir(filePath.c_str());
+                    }
+                }
+                else
+                {
+                    // Delete files
+                    remove(filePath.c_str());
+                }
+            }
+            closedir(dir);
+        }
+    }
+    else
+    {
+        // Create folder
+        mkdir(folderPath.c_str(), 0777); // Set appropriate permissions
+    }
+}
+
+std::string generateString(int value, int width)
+{
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(width) << value;
+    return oss.str();
+}
 
 SfM::SfM(vector<string> imageComplateNames, vector<double> K = {}, vector<double> distortion = {})
 {
@@ -29,17 +81,23 @@ SfM::SfM(vector<string> imageComplateNames, vector<double> K = {}, vector<double
 
 SfM::SfM(vector<string> imageComplateNames)
 {
+
     mvImageComplateNames = imageComplateNames;
 
     getAllImages(mvImageComplateNames, mvImages);
 
-    mintrinsics.K = (Mat_<float>(3, 3) << 2500, 0, mvImages[0].cols / 2,
-                     0, 2500, mvImages[0].rows / 2,
+    float fx, fy;
+    fx = fy = 1.2f * std::max(mvImages[0].cols, mvImages[0].rows);
+
+    mintrinsics.K = (Mat_<float>(3, 3) << fx, 0, mvImages[0].cols / 2,
+                     0, fy, mvImages[0].rows / 2,
                      0, 0, 1);
 
     mintrinsics.K_inv = mintrinsics.K.inv();
 
     mvImagePose.resize(mvImages.size());
+    mvInlierList.resize(mvImages.size(),vector<pair<int,int>>(mvImages.size()));
+
 #ifdef _DEBUG_MODE_
     cout << "共有" << mvImageComplateNames.size() << "张照片" << endl;
     cout << "K:" << endl;
@@ -153,6 +211,11 @@ void SfM::mapInit()
                 mvImageFeatureSet[i],
                 mvImageFeatureSet[j],
                 mMatchMatrix[i][j]);
+            mvInlierList[i][j].first = j;
+            mvInlierList[i][j].second = numInliers;
+            mvInlierList[j][i].first = i;
+            mvInlierList[j][i].second = numInliers;
+            std::cout<<"hello"<<endl;
             const float inliersRatio = (float)numInliers / (float)(mMatchMatrix[i][j].size());
             pairsHomographyInliers[inliersRatio] = {i, j};
         }
@@ -206,7 +269,7 @@ void SfM::mapInit()
             continue;
         }
 #ifdef _DEBUG_MODE_
-            cout << i << "和" << j << "内点满足条件" << endl;
+        cout << i << "和" << j << "内点满足条件" << endl;
 #endif
         mMatchMatrix[i][j] = prunedMatching;
 
@@ -226,7 +289,7 @@ void SfM::mapInit()
             continue;
         }
 #ifdef _DEBUG_MODE_
-            cout << i << "和" << j << "三角化成功" << endl;
+        cout << i << "和" << j << "三角化成功" << endl;
 #endif
         mReconstructionCloud = pointCloud;
         mvImagePose[i] = Pleft;
@@ -236,7 +299,7 @@ void SfM::mapInit()
         mGoodViews.insert(i);
         mGoodViews.insert(j);
 #ifdef _DEBUG_MODE_
-            cout << "姿态保存完毕" << endl;
+        cout << "姿态保存完毕" << endl;
 #endif
         adjustCurrentBundle();
 
@@ -282,7 +345,7 @@ void SfM::addMoreFrames()
         if (isUpdate)
         {
 #ifdef _DEBUG_MODE_
-    cout << "开始插入" << bestView <<endl;
+            cout << "开始插入" << bestView << endl;
 #endif
             mDoneViews.insert(bestView);
             // recover the new view camera pose
@@ -293,11 +356,11 @@ void SfM::addMoreFrames()
                 newCameraPose);
 
             if (not success)
-            {   
+            {
                 continue;
             }
 #ifdef _DEBUG_MODE_
-    cout << bestView<<"解算位姿成功" << endl;
+            cout << bestView << "解算位姿成功" << endl;
 #endif
             mvImagePose[bestView] = newCameraPose;
 
@@ -598,4 +661,100 @@ void SfM::saveCloudAndCamerasToPLY(const std::string &prefix)
         ofsc << (i * 4 + 0) << " " << (i * 4 + 3) << " "
              << "0 0 255" << endl;
     }
+
+    ofsc.close();
+}
+
+void SfM::saveResultForMVS()
+{
+
+    string rootPath = "scan";
+    createOrClearFolder(rootPath);
+    string camPath = "scan/cams_1";
+    createOrClearFolder(camPath);
+    string imagePath = "scan/images";
+    createOrClearFolder(imagePath);
+    vector<bool> isRegister(mvImagePose.size(), false);
+    int maxRegisterNum = 0;
+    for (int i = 0; i < mvImagePose.size(); i++)
+    {
+        if (mvImagePose[i](0, 3) != 0 || mvImagePose[i](1, 3) != 0 || mvImagePose[i](2, 3) != 0)
+        {
+            isRegister[i] = true;
+            maxRegisterNum++;
+        }
+    }
+    int index = 0;
+    map<int,int> indexPair; //原来的序号和存储后的序号，由于并不是每个图像都有解，所以这么处理
+    for (int i = 0; i < mvImages.size(); i++)
+    {
+        if (isRegister[i])
+        {   indexPair[i] = index;
+            string imageName = imagePath + "/" + generateString(index, 8) + ".jpg";
+            cv::imwrite(imageName, mvImages[i]);
+            string camName = camPath + "/" + generateString(index, 8) + "_cam.txt";
+            ofstream ofs(camName);
+            ofs << "extrinsic" << endl
+                << mvImagePose[i](0, 0) << " " << mvImagePose[i](0, 1) << " " << mvImagePose[i](0, 2) << " " << mvImagePose[i](0, 3) << endl
+                << mvImagePose[i](1, 0) << " " << mvImagePose[i](1, 1) << " " << mvImagePose[i](1, 2) << " " << mvImagePose[i](1, 3) << endl
+                << mvImagePose[i](2, 0) << " " << mvImagePose[i](2, 1) << " " << mvImagePose[i](2, 2) << " " << mvImagePose[i](2, 3) << endl
+                << "0.0 0.0 0.0 1.0" << endl
+                << endl
+                << "intrinsic" << endl
+                << mintrinsics.K.at<float>(0, 0) << " " << mintrinsics.K.at<float>(0, 1) << " " << mintrinsics.K.at<float>(0, 2) << endl
+                << mintrinsics.K.at<float>(1, 0) << " " << mintrinsics.K.at<float>(1, 1) << " " << mintrinsics.K.at<float>(1, 2) << endl
+                << mintrinsics.K.at<float>(2, 0) << " " << mintrinsics.K.at<float>(2, 1) << " " << mintrinsics.K.at<float>(2, 2) << endl;
+            ofs.close();
+            index++;
+            continue;
+        }
+        indexPair[i] = -1;
+    }
+
+    // 求共视图
+    // for (auto it : mvInlierList)
+    // {
+    //     std::sort(it.begin(), it.end(), [](const std::pair<int, int> &pair1, const std::pair<int, int> &pair2)
+    //               {
+    //                   return pair1.second > pair2.second; // 从大到小排序
+    //               });
+    //     // for(auto s:it){
+    //     //     cout<<s.first<<" "<<s.second<<endl;
+    //     // }
+    //     // cout<<"================"<<endl;
+    // }
+    // for(auto it:mvInlierList[0]){
+    //     cout<<it.first<<" "<<it.second<<endl;
+    // }
+
+    string pairName = rootPath + "/" + "pair.txt";
+    ofstream ofs(pairName);
+    ofs << maxRegisterNum << endl;
+    for (int i = 0 ; i < mvImages.size(); i++)
+    {   
+        if(!isRegister[i]){
+            continue;
+        }
+        ofs << indexPair[i] << endl
+            << "5" <<" ";
+        int viewNum = 0;
+        std::sort(mvInlierList[i].begin(), mvInlierList[i].end(), [](const std::pair<int, int> &pair1, const std::pair<int, int> &pair2)
+                  {
+                      return pair1.second > pair2.second; // 从大到小排序
+                  });
+        for(auto it:mvInlierList[i]){
+            ////////////////
+            cout<<it.first<<" "<<it.second<<endl;
+            ////////////////
+            if(isRegister[it.first]&&it.first!=i){
+                viewNum++;
+                ofs<<indexPair[it.first]<<" "<<it.second<<" ";
+            };
+            if(viewNum==5){
+                ofs<<endl;
+                break;
+            }
+        }
+    }
+    ofs.close();
 }

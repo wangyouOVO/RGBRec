@@ -7,7 +7,9 @@
 int main(int argc,char** argv){
 
     using namespace boost::filesystem;
-    std::string directoryPath = "/home/wt/Projects/Rec/data/images";
+    // std::string directoryPath = "/home/wt/Projects/Rec/data/images";
+    std::string directoryPath = argv[1];
+    
     vector<string> Filenames;
     path dirPath(directoryPath);
     if (not exists(dirPath) or not is_directory(dirPath)) {
@@ -33,6 +35,7 @@ int main(int argc,char** argv){
     SfM a(Filenames);
     a.sfmStart();
     a.saveCloudAndCamerasToPLY("hello");
+    a.saveResultForMVS();
 
     return 0;
 }
